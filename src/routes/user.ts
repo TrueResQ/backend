@@ -5,7 +5,7 @@ import Joi from "joi";
 import { knexRead, knexWrite } from "../database/knex";
 import { USER } from "../models/interfaces";
 import createLogger from "../plugins/createLogger";
-import { genericValidator, publicAddressValidator, validateContactVerifier, validateContactVerifierId } from "../validations";
+import { publicAddressValidator, validateContactVerifier, validateContactVerifierId } from "../validations";
 
 const router = express.Router();
 const logger = createLogger("user.ts");
@@ -16,6 +16,26 @@ const logger = createLogger("user.ts");
 router.get("/:public_address", async (req, res) => {
   try {
     const p1 = await knexRead(USER).where({ public_address: req.params.public_address });
+    return res.json({ data: p1, success: true });
+  } catch (error) {
+    logger.error("unable to give out user details", error);
+    return res.status(500).json({ error, success: false });
+  }
+});
+
+router.get("/get_recovery_accounts/:public_address", async (req, res) => {
+  try {
+    const p1 = await knexRead("recovery_address").where({ executant_address: req.params.public_address });
+    return res.json({ data: p1, success: true });
+  } catch (error) {
+    logger.error("unable to give out user details", error);
+    return res.status(500).json({ error, success: false });
+  }
+});
+
+router.get("/get_gaurdians/:public_address", async (req, res) => {
+  try {
+    const p1 = await knexRead("gaurdian").where({ executant_address: req.params.public_address });
     return res.json({ data: p1, success: true });
   } catch (error) {
     logger.error("unable to give out user details", error);
