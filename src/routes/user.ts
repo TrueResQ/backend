@@ -5,7 +5,7 @@ import Joi from "joi";
 import { knexRead, knexWrite } from "../database/knex";
 import { USER } from "../models/interfaces";
 import createLogger from "../plugins/createLogger";
-import { publicAddressValidator, validateContactVerifier, validateContactVerifierId } from "../validations";
+import { genericValidator, publicAddressValidator, validateContactVerifier, validateContactVerifierId } from "../validations";
 
 const router = express.Router();
 const logger = createLogger("user.ts");
@@ -43,9 +43,9 @@ router.get("/get_recovery_accounts/:public_address", async (req, res) => {
   }
 });
 
-router.get("/get_gaurdians/:public_address", async (req, res) => {
+router.get("/get_guardians/:public_address", async (req, res) => {
   try {
-    const p1 = await knexRead("gaurdian").where({ executant_address: req.params.public_address });
+    const p1 = await knexRead("guardian").where({ executant_address: req.params.public_address });
     return res.json({ data: p1, success: true });
   } catch (error) {
     logger.error("unable to give out user details", error);
@@ -53,14 +53,14 @@ router.get("/get_gaurdians/:public_address", async (req, res) => {
   }
 });
 
-router.get("/get_gaurdians/recovery_account/:public_address", async (req, res) => {
+router.get("/get_guardians/recovery_account/:public_address", async (req, res) => {
   try {
     const recovery_data = await knexRead("recovery_address").where({ recovery_address: req.params.public_address });
     if (recovery_data.length === 0) {
       return res.json({ error: "user doesn't exist", success: false });
     }
     const { executant_address } = recovery_data[0];
-    const p1 = await knexRead("gaurdian").where({ executant_address });
+    const p1 = await knexRead("guardian").where({ executant_address });
     return res.json({ data: p1, success: true });
   } catch (error) {
     logger.error("unable to give out user details", error);
@@ -75,8 +75,8 @@ router.post(
   "/",
   celebrate({
     [Segments.BODY]: Joi.object({
-      verifier_id: validateContactVerifierId,
-      verifier: validateContactVerifier,
+      verifier_id: genericValidator,
+      verifier: genericValidator,
       public_address: publicAddressValidator,
     }),
   }),
@@ -100,10 +100,10 @@ router.post(
   }
 );
 
-router.post("/gaurdian_accepted", async (req, res) => {
+router.post("/guardian_accepted", async (req, res) => {
   try {
-    const { public_address, verifier_id, verifier, gaurdian_address, accepted } = req.body || {};
-    await knexWrite("gaurdian").where({ gaurdian_address, executant_address: public_address, verifier_id, verifier }).update({
+    const { public_address, verifier_id, verifier, guardian_address, accepted } = req.body || {};
+    await knexWrite("guardian").where({ guardian_address, executant_address: public_address, verifier_id, verifier }).update({
       accepted,
     });
     return res.status(201).json({ success: true });
@@ -114,10 +114,10 @@ router.post("/gaurdian_accepted", async (req, res) => {
 });
 
 /**
- * Updates gaurdian_id and recovery_address_id
+ * Updates guardian_id and recovery_address_id
  */
 router.post("/set_recovery", async (req, res) => {
-  const { public_address, verifier_id, verifier, gaurdians, nominee, recovery_addresses } = req.body;
+  const { public_address, verifier_id, verifier, guardians, nominee, recovery_addresses } = req.body;
   try {
     const p1 = await knexRead(USER).where({ public_address });
     if (p1.length === 0) {
@@ -139,23 +139,23 @@ router.post("/set_recovery", async (req, res) => {
       await knexWrite("recovery_address").insert(ra);
     }
 
-    if (gaurdians) {
-      const gaurdians_array = gaurdians.split(",");
+    if (guardians) {
+      const guardians_array = guardians.split(",");
       const ga = [];
-      gaurdians_array.forEach(async function (gaurdian) {
+      guardians_array.forEach(async function (guardian) {
         let isNominee = "false";
-        if (gaurdian === nominee) {
+        if (guardian === nominee) {
           isNominee = "true";
         }
         ga.push({
           executant_address: public_address,
           verifier,
           verifier_id,
-          gaurdian_address: gaurdian,
+          guardian_address: guardian,
           is_nominee: isNominee,
         });
       });
-      await knexWrite("gaurdian").insert(ga);
+      await knexWrite("guardian").insert(ga);
     }
   } catch (error) {
     logger.error("unable to insert user", error);

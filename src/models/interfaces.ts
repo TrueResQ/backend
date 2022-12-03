@@ -8,7 +8,7 @@ export interface User {
   public_address: string;
   verifier: string;
   verifier_id: string;
-  gaurdians_id: string;
+  guardians_id: string;
   nominee: string;
   recovery_addresses_id: string;
 }

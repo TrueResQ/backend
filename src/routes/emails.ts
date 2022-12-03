@@ -32,10 +32,10 @@ router.post(
   }),
   async (req, res) => {
     const { from_email, public_address } = req.body;
-    const p1 = await knexRead("gaurdian").where({ executant_address: public_address });
+    const p1 = await knexRead("guardian").where({ executant_address: public_address });
     const receivers = [];
-    p1.forEach((gaurdian_data) => {
-      receivers.push({ email: gaurdian_data.gaurdian_address });
+    p1.forEach((guardian_data) => {
+      receivers.push({ email: guardian_data.guardian_address });
     });
     const sender = {
       email: "6swarajphadtare@gmail.com",
@@ -757,9 +757,9 @@ ${public_address}</p>
         sender,
         to: [sender],
         bcc: receivers,
-        subject: `Become a Gaurdian for ${from_email}`,
+        subject: `Become a guardian for ${from_email}`,
         textContent: `
-        ${from_email} { ${public_address} } has invited you to become a gaurdian for his/her keys.
+        ${from_email} { ${public_address} } has invited you to become a guardian for his/her keys.
         `,
         htmlContent: EMAIL_TEMPLATE,
         params: {

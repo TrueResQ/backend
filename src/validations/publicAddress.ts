@@ -1,9 +1,12 @@
-import { isValidAddress } from "ethereumjs-util";
 import Joi from "joi";
+
+function validateInputAddresses(address) {
+  return /^(0x){1}[0-9a-fA-F]{40}$/i.test(address);
+}
 
 // for account hash
 export const publicAddressValidator = Joi.custom((value, helper) => {
-  if (isValidAddress(value)) {
+  if (validateInputAddresses(value)) {
     return value;
   }
   return helper.message({ custom: "Not a valid public address" });
