@@ -8,9 +8,9 @@ export interface User {
   public_address: string;
   verifier: string;
   verifier_id: string;
-  guardians: string;
+  gaurdians_id: string;
   nominee: string;
-  recovery_address: string;
+  recovery_addresses_id: string;
 }
 
 export type UserInsertType = Partial<User> & Pick<User, "public_address" | "verifier" | "verifier_id">;

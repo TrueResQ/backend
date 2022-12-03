@@ -13,16 +13,16 @@ const logger = createLogger("user.ts");
 /**
  * Returns user details
  */
-router.get("/", async (req, res) => {
+router.get("/:public_address", async (req, res) => {
   try {
-    const { public_address } = req.body;
-    const p1 = await knexRead(USER).where({ public_address });
+    const p1 = await knexRead(USER).where({ public_address: req.params.public_address });
     return res.json({ data: p1, success: true });
   } catch (error) {
     logger.error("unable to give out user details", error);
     return res.status(500).json({ error, success: false });
   }
 });
+
 /**
  * Creates a new user
  */
@@ -33,14 +33,11 @@ router.post(
       verifier_id: validateContactVerifierId,
       verifier: validateContactVerifier,
       public_address: publicAddressValidator,
-      gaurdians: genericValidator,
-      nominee: genericValidator,
-      recovery_address: genericValidator,
     }),
   }),
   async (req, res) => {
     try {
-      const { public_address, verifier_id, verifier, gaurdians, nominee, recovery_address } = req.body || {};
+      const { public_address, verifier_id, verifier } = req.body || {};
       const result = await knexWrite("user").where({ public_address });
       if (result.length === 0) {
         await knexWrite("user").insert({
@@ -50,22 +47,77 @@ router.post(
         });
         return res.status(201).json({ success: true });
       }
-      const updateObj = {
-        public_address,
-        verifier_id,
-        verifier,
-        gaurdians,
-        nominee,
-        recovery_address,
-      };
-      await knexWrite("user").where({ public_address }).update(updateObj);
-      return res.status(201).json({ success: true });
+      return res.status(403).json({ error: "user already exists", success: false });
     } catch (error) {
       logger.error("unable to insert user", error);
       return res.status(500).json({ error, success: false });
     }
   }
 );
+
+router.post("/gaurdian_accepted", async (req, res) => {
+  try {
+    const { public_address, verifier_id, verifier, gaurdian_address, gaurdian_accepted } = req.body || {};
+    await knexWrite("gaurdian").where({ gaurdian_address, public_address, verifier_id, verifier }).update({
+      gaurdian_accepted,
+    });
+    return res.status(201).json({ success: true });
+  } catch (error) {
+    logger.error("unable to insert user", error);
+    return res.status(500).json({ error, success: false });
+  }
+});
+
+/**
+ * Updates gaurdian_id and recovery_address_id
+ */
+router.post("/set_recovery", async (req, res) => {
+  const { public_address, verifier_id, verifier, gaurdians, nominee, recovery_addresses } = req.body;
+  try {
+    const p1 = await knexRead(USER).where({ public_address });
+    if (p1.length === 0) {
+      return res.status(403).json({ error: "user doesn't exists", success: false });
+    }
+    await Promise.all(p1);
+
+    if (recovery_addresses) {
+      const recovery_addresses_array = recovery_addresses.split(",");
+      const ra = [];
+      recovery_addresses_array.forEach(async function (recovery_address) {
+        ra.push({
+          executant_address: public_address,
+          verifier,
+          verifier_id,
+          recovery_address,
+        });
+      });
+      await knexWrite("recovery_address").insert(ra);
+    }
+
+    if (gaurdians) {
+      const gaurdians_array = gaurdians.split(",");
+      const ga = [];
+      gaurdians_array.forEach(async function (gaurdian) {
+        let isNominee = "false";
+        if (gaurdian === nominee) {
+          isNominee = "true";
+        }
+        ga.push({
+          executant_address: public_address,
+          verifier,
+          verifier_id,
+          gaurdian_address: gaurdian,
+          nominee: isNominee,
+        });
+      });
+      await knexWrite("gaurdian").insert(ga);
+    }
+  } catch (error) {
+    logger.error("unable to insert user", error);
+    return res.status(500).json({ error, success: false });
+  }
+  return res.status(201).json({ success: true });
+});
 
 /**
  * Delete the user
