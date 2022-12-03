@@ -1,9 +1,9 @@
+import { isValidAddress } from "ethereumjs-util";
 import Joi from "joi";
-import { isAddress } from "web3-utils";
 
 // for account hash
 export const publicAddressValidator = Joi.custom((value, helper) => {
-  if (isAddress(value)) {
+  if (isValidAddress(value)) {
     return value;
   }
   return helper.message({ custom: "Not a valid public address" });

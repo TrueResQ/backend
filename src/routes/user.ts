@@ -30,67 +30,38 @@ router.post(
   "/",
   celebrate({
     [Segments.BODY]: Joi.object({
-      verifierId: validateContactVerifierId,
+      verifier_id: validateContactVerifierId,
       verifier: validateContactVerifier,
       public_address: publicAddressValidator,
+      gaurdians: genericValidator,
+      nominee: genericValidator,
+      recovery_address: genericValidator,
     }),
   }),
   async (req, res) => {
     try {
-      const { verifier, verifierId, public_address } = req.body || {};
+      const { public_address, verifier_id, verifier, gaurdians, nominee, recovery_address } = req.body || {};
       const result = await knexWrite("user").where({ public_address });
       if (result.length === 0) {
         await knexWrite("user").insert({
           public_address,
           verifier: verifier || "",
-          verifier_id: verifierId || "",
+          verifier_id: verifier_id || "",
         });
         return res.status(201).json({ success: true });
       }
-      logger.warn("Already exists");
-      return res.status(409).json({ error: "user already exists", success: false });
+      const updateObj = {
+        public_address,
+        verifier_id,
+        verifier,
+        gaurdians,
+        nominee,
+        recovery_address,
+      };
+      await knexWrite("user").where({ public_address }).update(updateObj);
+      return res.status(201).json({ success: true });
     } catch (error) {
       logger.error("unable to insert user", error);
-      return res.status(500).json({ error, success: false });
-    }
-  }
-);
-
-/**
- * Update the user info
- */
-router.patch(
-  "/",
-  celebrate({
-    [Segments.BODY]: Joi.object({
-      verifier_id: validateContactVerifierId,
-      verifier: validateContactVerifier,
-      public_address: publicAddressValidator,
-      guardians: genericValidator,
-      nominee: genericValidator,
-      recovery_address: publicAddressValidator,
-    }),
-  }),
-  async (req, res) => {
-    try {
-      const { public_address, verifierId, verifier, gaurdians, nominee, recovery_address } = req.body;
-      const objectId = await knexWrite("user").where({ public_address });
-      if (objectId.length > 0) {
-        const updateObj = {
-          public_address,
-          verifierId,
-          verifier,
-          gaurdians,
-          nominee,
-          recovery_address,
-        };
-        await knexWrite("user").where({ public_address }).update(updateObj);
-        return res.status(201).json({ success: true });
-      }
-      logger.warn("Invalid user");
-      return res.status(403).json({ error: "user doesn't exist", success: false });
-    } catch (error) {
-      logger.error("unable to patch user", error);
       return res.status(500).json({ error, success: false });
     }
   }
