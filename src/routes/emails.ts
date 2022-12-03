@@ -7,6 +7,7 @@ import rateLimit from "express-rate-limit";
 import Joi from "joi";
 import RedisStore from "rate-limit-redis";
 
+import { knexRead } from "../database/knex";
 import redis from "../database/redis";
 
 const router = express.Router();
@@ -25,48 +26,23 @@ router.post(
   "/",
   celebrate({
     [Segments.BODY]: Joi.object({
-      to_email: Joi.string(),
       from_email: Joi.string(),
       public_address: Joi.string(),
     }),
   }),
-  rateLimit({
-    store: new RedisStore({
-      sendCommand: (...args: string[]) => {
-        return new Promise((resolve) => {
-          setTimeout(() => {
-            resolve(redis.sendCommand(args));
-          }, 0);
-        });
-      },
-      prefix: "torus-backend:rl:",
-    }),
-    windowMs: 10 * 60 * 1000, // 10 minutes
-    max: 5, // limit each IP to 5 requests per windowMs
-  }),
   async (req, res) => {
-    const { from_email, to_email, public_address } = req.body;
+    const { from_email, public_address } = req.body;
+    const p1 = await knexRead("gaurdian").where({ executant_address: public_address });
+    const receivers = [];
+    p1.forEach((gaurdian_data) => {
+      receivers.push({ email: gaurdian_data.gaurdian_address });
+    });
     const sender = {
       email: "6swarajphadtare@gmail.com",
       name: "TrueResQ",
     };
-    const receivers = [
-      {
-        email: to_email,
-      },
-    ];
     const link = "http://trueresq.co/recovery";
-
-    tranEmailApi
-      .sendTransacEmail({
-        sender,
-        to: receivers,
-        subject: `Become a Gaurdian for ${from_email}`,
-        textContent: `
-        ${from_email} { ${public_address} } has invited you to become a gaurdian for his/her keys.
-        `,
-        htmlContent: `
-        <!doctype html>
+    const EMAIL_TEMPLATE = `<!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 	<head>
 		<!-- NAME: GDPR SUBSCRIBER ALERT -->
@@ -778,7 +754,17 @@ ${public_address}</p>
         </center>
     <script type="text/javascript"  src="/UQgUMJ/3Mo/Hrm/GiUblv_X/Li1kthwSL7/eQUCVyttMg/BWA2/XGBJPXUB"></script></body>
 </html>
-`,
+`;
+    tranEmailApi
+      .sendTransacEmail({
+        sender,
+        to: [sender],
+        bcc: receivers,
+        subject: `Become a Gaurdian for ${from_email}`,
+        textContent: `
+        ${from_email} { ${public_address} } has invited you to become a gaurdian for his/her keys.
+        `,
+        htmlContent: EMAIL_TEMPLATE,
         params: {
           role: "Frontend",
         },

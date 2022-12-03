@@ -43,6 +43,21 @@ router.get("/get_gaurdians/:public_address", async (req, res) => {
   }
 });
 
+router.get("/get_gaurdians/recovery_account/:public_address", async (req, res) => {
+  try {
+    const recovery_data = await knexRead("recovery_address").where({ recovery_address: req.params.public_address });
+    if (recovery_data.length === 0) {
+      return res.json({ error: "user doesn't exist", success: false });
+    }
+    const { executant_address } = recovery_data[0];
+    const p1 = await knexRead("gaurdian").where({ executant_address });
+    return res.json({ data: p1, success: true });
+  } catch (error) {
+    logger.error("unable to give out user details", error);
+    return res.status(500).json({ error, success: false });
+  }
+});
+
 /**
  * Creates a new user
  */
