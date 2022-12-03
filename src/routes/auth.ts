@@ -5,12 +5,11 @@ import jwt from "jsonwebtoken";
 
 import redis from "../database/redis";
 import { TORUS_REDIS_PREFIX } from "../helpers/constants";
-import getError from "../helpers/getError";
 import jwtPrivateKey from "../helpers/keys";
 import { getAddressFromSignedMessage, getSignInMessage } from "../helpers/message";
 import generateRandomNumber from "../helpers/random";
 import createLogger from "../plugins/createLogger";
-import { messageValidator, publicAddressValidator } from "../validations";
+import { genericValidator, publicAddressValidator } from "../validations";
 
 const router = express.Router();
 
@@ -37,7 +36,7 @@ router.post(
       return res.status(201).json({ success: true, message: signInMessage });
     } catch (error) {
       logger.error("unable to insert/update message", error);
-      return res.status(500).json({ error: getError(error), success: false });
+      return res.status(500).json({ error, success: false });
     }
   }
 );
@@ -47,7 +46,7 @@ router.post(
   celebrate({
     [Segments.BODY]: Joi.object({
       public_address: publicAddressValidator,
-      signed_message: messageValidator,
+      signed_message: genericValidator,
     }),
   }),
   async (req, res) => {
@@ -71,7 +70,7 @@ router.post(
       return res.status(403).json({ error: "get message first", success: false });
     } catch (error) {
       logger.error("unable to insert/update message", error);
-      return res.status(500).json({ error: getError(error), success: false });
+      return res.status(500).json({ error, success: false });
     }
   }
 );

@@ -12,4 +12,4 @@ export const publicAddressValidator = Joi.custom((value, helper) => {
 // for pubkey  (optional for backward compatibility)
 export const pubKeyValidator = Joi.string().min(66).max(68).hex();
 
-export const messageValidator = Joi.string().required();
+export const genericValidator = Joi.string();
