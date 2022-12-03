@@ -1,0 +1,6 @@
+{
+  "cSpell.words": ["Airtable", "CRYPTOCOMPARE", "knexfile", "latestversion", "Mutex"],
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true
+  }
+}

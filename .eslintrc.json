@@ -1,0 +1,20 @@
+{
+  "root": true,
+  "extends": ["@toruslabs/eslint-config-node"],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": 11,
+    "project": "./tsconfig.json"
+  },
+  "env": {
+    "es2020": true,
+    "browser": true,
+    "node": true,
+    "serviceworker": true
+  },
+  "rules": {
+    "camelcase": 0,
+    "security/detect-object-injection": 0
+  }
+}

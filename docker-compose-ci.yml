@@ -1,0 +1,31 @@
+version: "3"
+
+services:
+  redis:
+    # platform: linux/x86_64
+    restart: always
+    image: redis:6-alpine
+    env_file:
+      - ./.env.development
+    ports:
+      - "6379:6379"
+  mysql:
+    # platform: linux/x86_64
+    restart: always
+    image: mysql:5.7
+    env_file:
+      - ./.env.development
+    ports:
+      - "3306:3306"
+  torus-backend:
+    # platform: linux/x86_64
+    restart: "no"
+    depends_on:
+      - mysql
+      - redis
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    env_file:
+      - ./.env.development
+    command: "/app/test/run.sh"
