@@ -77,9 +77,9 @@ router.post(
 
 router.post("/gaurdian_accepted", async (req, res) => {
   try {
-    const { public_address, verifier_id, verifier, gaurdian_address, gaurdian_accepted } = req.body || {};
-    await knexWrite("gaurdian").where({ gaurdian_address, public_address, verifier_id, verifier }).update({
-      gaurdian_accepted,
+    const { public_address, verifier_id, verifier, gaurdian_address, accepted } = req.body || {};
+    await knexWrite("gaurdian").where({ gaurdian_address, executant_address: public_address, verifier_id, verifier }).update({
+      accepted,
     });
     return res.status(201).json({ success: true });
   } catch (error) {
@@ -127,7 +127,7 @@ router.post("/set_recovery", async (req, res) => {
           verifier,
           verifier_id,
           gaurdian_address: gaurdian,
-          nominee: isNominee,
+          is_nominee: isNominee,
         });
       });
       await knexWrite("gaurdian").insert(ga);
