@@ -23,6 +23,16 @@ router.get("/:public_address", async (req, res) => {
   }
 });
 
+router.get("/:recovery_account", async (req, res) => {
+  try {
+    const p1 = await knexRead("recovery_address").where({ recovery_account: req.params.recovery_account });
+    return res.json({ data: p1, success: true });
+  } catch (error) {
+    logger.error("unable to give out user details", error);
+    return res.status(500).json({ error, success: false });
+  }
+});
+
 router.get("/get_recovery_accounts/:public_address", async (req, res) => {
   try {
     const p1 = await knexRead("recovery_address").where({ executant_address: req.params.public_address });
