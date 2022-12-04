@@ -1,4 +1,6 @@
+/* eslint-disable no-console */
 import { celebrate, Segments } from "celebrate";
+import { pbkdf2, randomUUID } from "crypto";
 import express from "express";
 import Joi from "joi";
 
@@ -46,6 +48,28 @@ router.get("/get_recovery_accounts/:public_address", async (req, res) => {
 router.get("/get_guardians/:public_address", async (req, res) => {
   try {
     const p1 = await knexRead("guardian").where({ executant_address: req.params.public_address });
+    return res.json({ data: p1, success: true });
+  } catch (error) {
+    logger.error("unable to give out user details", error);
+    return res.status(500).json({ error, success: false });
+  }
+});
+
+router.get("/get_guardians_from_recovery_account/:public_address", async (req, res) => {
+  try {
+    const p1 = await knexRead("recovery_address").where({ recovery_address: req.params.public_address }).first();
+    const p2 = await knexRead("guardian").where({ executant_address: p1.executant_address });
+
+    return res.json({ data: p2, success: true });
+  } catch (error) {
+    logger.error("unable to give out user details", error);
+    return res.status(500).json({ error, success: false });
+  }
+});
+
+router.get("/get_executioners/:verifier_id", async (req, res) => {
+  try {
+    const p1 = await knexRead("guardian").where({ verifier_id: req.params.verifier_id });
     return res.json({ data: p1, success: true });
   } catch (error) {
     logger.error("unable to give out user details", error);
@@ -102,9 +126,22 @@ router.post(
 
 router.post("/guardian_accepted", async (req, res) => {
   try {
-    const { public_address, verifier_id, verifier, guardian_address, accepted } = req.body || {};
-    await knexWrite("guardian").where({ guardian_address, executant_address: public_address, verifier_id, verifier }).update({
+    const { public_address, verifier_id, verifier, guardian_email, accepted } = req.body || {};
+    await knexWrite("guardian").where({ guardian_email, executant_address: public_address, verifier_id, verifier }).update({
       accepted,
+    });
+    return res.status(201).json({ success: true });
+  } catch (error) {
+    logger.error("unable to insert user", error);
+    return res.status(500).json({ error, success: false });
+  }
+});
+
+router.post("/update_verifier_id", async (req, res) => {
+  try {
+    const { uuid, verifier_id } = req.body || {};
+    await knexWrite("guardian").where({ uuid }).update({
+      verifier_id,
     });
     return res.status(201).json({ success: true });
   } catch (error) {
@@ -138,7 +175,7 @@ router.post("/set_recovery", async (req, res) => {
       });
       await knexWrite("recovery_address").insert(ra);
     }
-
+    console.log(guardians);
     if (guardians) {
       const guardians_array = guardians.split(",");
       const ga = [];
@@ -147,11 +184,14 @@ router.post("/set_recovery", async (req, res) => {
         if (guardian === nominee) {
           isNominee = "true";
         }
+        const uuid = randomUUID();
+
         ga.push({
+          uuid,
           executant_address: public_address,
           verifier,
           verifier_id,
-          guardian_address: guardian,
+          guardian_email: guardian,
           is_nominee: isNominee,
         });
       });
@@ -162,6 +202,20 @@ router.post("/set_recovery", async (req, res) => {
     return res.status(500).json({ error, success: false });
   }
   return res.status(201).json({ success: true });
+});
+
+/**
+ * Delete the user
+ */
+router.delete("/", async (req, res) => {
+  try {
+    const { public_address } = req;
+    await knexWrite("user").where({ public_address }).delete();
+    return res.status(201).json({ success: true });
+  } catch (error) {
+    logger.error("unable to delete user", error);
+    return res.status(500).json({ error, success: false });
+  }
 });
 
 /**

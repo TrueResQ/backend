@@ -11,9 +11,10 @@ export async function up(knex: Knex): Promise<void> {
     })
     .createTable("guardian", (guardiansTable) => {
       guardiansTable.increments("id");
+      guardiansTable.string("uuid", 1270).notNullable().unique();
       guardiansTable.string("executant_address", 127).notNullable().defaultTo("");
       guardiansTable.string("verifier_id", 1000).notNullable().defaultTo("");
-      guardiansTable.string("guardian_address", 127).notNullable().defaultTo("");
+      guardiansTable.string("guardian_email", 127).notNullable().defaultTo("");
       guardiansTable.string("verifier", 255).notNullable().defaultTo("");
       guardiansTable.string("accepted", 5).notNullable().defaultTo("false");
       guardiansTable.string("is_nominee", 5).notNullable().defaultTo("false");
@@ -23,6 +24,14 @@ export async function up(knex: Knex): Promise<void> {
       guardiansTable.string("executant_address", 127).notNullable().defaultTo("");
       guardiansTable.string("verifier_id", 1000).notNullable().defaultTo("");
       guardiansTable.string("recovery_address", 1000).notNullable().defaultTo("");
+      guardiansTable.string("verifier", 255).notNullable().defaultTo("");
+    })
+    .createTable("recovery_requests", (guardiansTable) => {
+      guardiansTable.increments("id");
+      guardiansTable.string("executant_address", 127).notNullable().defaultTo("");
+      guardiansTable.string("verifier_id", 1000).notNullable().defaultTo("");
+      guardiansTable.string("guardian_email", 127).notNullable().defaultTo("");
+      guardiansTable.string("guardian_pubkey", 1000).notNullable().defaultTo("");
       guardiansTable.string("verifier", 255).notNullable().defaultTo("");
     });
 }
